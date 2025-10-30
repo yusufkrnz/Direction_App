@@ -291,9 +291,17 @@ This project demonstrates proficiency in:
 
 ---
 
-## 📄 License
+## 📄 License & Certification
 
 This project is developed for the "Yapay Zeka ve Teknoloji Akademisi" Bootcamp Competition.
+
+### Bootcamp Participation Certificate
+
+![Bootcamp Certificate](media/License.png)
+
+**Yusuf KURNAZ** - Bootcamp Participant  
+**Duration:** 21.06.2025 - 03.08.2025 (6 weeks)  
+**Role:** System Architecture Design & Full Stack Development
 
 ---
 
