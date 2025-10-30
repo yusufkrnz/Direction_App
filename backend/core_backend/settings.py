@@ -13,12 +13,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Firebase imports
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
-
-
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,15 +31,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-lzl@-f$n(sd6o155fey9%h#qr)ttfx)_zl_p1v21_k5*(yuhyt'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-lzl@-f$n(sd6o155fey9%h#qr)ttfx)_zl_p1v21_k5*(yuhyt')
 
 # Gemini AI API Key
-GEMINI_API_KEY = 'AIzaSyBRtYZYRcsS8ULYhDj3jUieBVIs6OVqVOE'
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyBRtYZYRcsS8ULYhDj3jUieBVIs6OVqVOE')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.56.1', '0.0.0.0', '*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,192.168.56.1,0.0.0.0,*').split(',')
 
 
 # Application definition
@@ -213,7 +215,7 @@ CORS_ALLOW_HEADERS = [
 AUTH_USER_MODEL = 'users.User'
 
 # Firebase Configuration
-FIREBASE_CRED_PATH = BASE_DIR / 'yon_backend' / 'firebase-service.json'
+FIREBASE_CRED_PATH = os.getenv('FIREBASE_CRED_PATH', str(BASE_DIR / 'yon_backend' / 'firebase-service.json'))
 
 # Initialize Firebase only if not already initialized
 if not firebase_admin._apps:

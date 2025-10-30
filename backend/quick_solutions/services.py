@@ -21,9 +21,7 @@ class AIServices:
         # Firebase Vision için
         try:
             self.db = firestore.client()
-        except Exception as e:
-            print(f"Firebase başlatılamadı: {e}")
-            self.db = None
+        except Exception as e:            self.db = None
         
         # Google Cloud credentials (opsiyonel)
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'path/to/service-account.json')
@@ -36,9 +34,7 @@ class AIServices:
         try:
             vertexai.init(project=project_id, location=location)
             self.gemini_model = GenerativeModel("gemini-1.5-flash")
-        except Exception as e:
-            print(f"Vertex AI başlatılamadı: {e}")
-            self.gemini_model = None
+        except Exception as e:            self.gemini_model = None
     
     def _make_gemini_request(self, data, max_retries=3):
         """
@@ -59,20 +55,14 @@ class AIServices:
                         return result['candidates'][0]['content']['parts'][0]['text']
                     else:
                         return "Sonuç alınamadı."
-                elif response.status_code == 503:
-                    print(f"Gemini API aşırı yüklü, deneme {attempt + 1}/{max_retries}")
-                    if attempt < max_retries - 1:
+                elif response.status_code == 503:                    if attempt < max_retries - 1:
                         time.sleep(2 ** attempt)  # Exponential backoff
                         continue
                     else:
                         return "Gemini API şu anda meşgul. Lütfen daha sonra tekrar deneyin."
-                else:
-                    print(f"Gemini API Hatası: {response.status_code} - {response.text}")
-                    return f"API Hatası: {response.status_code}"
+                else:                    return f"API Hatası: {response.status_code}"
                     
-            except Exception as e:
-                print(f"Gemini API isteği hatası (deneme {attempt + 1}): {e}")
-                if attempt < max_retries - 1:
+            except Exception as e:                if attempt < max_retries - 1:
                     time.sleep(1)
                     continue
                 else:
@@ -84,10 +74,7 @@ class AIServices:
         """
         Firebase Vision AI ile fotoğraf analizi
         """
-        try:
-            print(f"Firebase Vision analizi başlatıldı: {file_path_or_name}")
-            
-            # Firebase Storage'dan dosya adını al
+        try:            # Firebase Storage'dan dosya adını al
             if '/' in file_path_or_name:
                 # Firebase Storage path'inden dosya adını çıkar
                 file_name = file_path_or_name.split('/')[-1]
@@ -106,34 +93,24 @@ class AIServices:
                     
                     if doc.exists:
                         data = doc.to_dict()
-                        extracted_text = data.get('text', '')
-                        print(f"✅ Firebase Vision AI'dan text alındı: {extracted_text[:100]}...")
-                        return extracted_text
-                    else:
-                        print(f"❌ Firestore'da extracted text bulunamadı: {file_name}")
-                        # Fallback olarak Gemini Vision kullan
+                        extracted_text = data.get('text', '')                        return extracted_text
+                    else:                        # Fallback olarak Gemini Vision kullan
                         if os.path.exists(file_path_or_name):
                             return self._analyze_with_gemini_vision(file_path_or_name)
                         else:
                             return "Firebase Vision AI sonucu bulunamadı ve dosya erişilebilir değil."
                         
-                except Exception as e:
-                    print(f"❌ Firebase Vision AI hatası: {e}")
-                    # Fallback olarak Gemini Vision kullan
+                except Exception as e:                    # Fallback olarak Gemini Vision kullan
                     if os.path.exists(file_path_or_name):
                         return self._analyze_with_gemini_vision(file_path_or_name)
                     else:
                         return f"Firebase Vision AI hatası: {str(e)}"
-            else:
-                print("❌ Firebase bağlantısı yok, Gemini Vision kullanılıyor")
-                if os.path.exists(file_path_or_name):
+            else:                if os.path.exists(file_path_or_name):
                     return self._analyze_with_gemini_vision(file_path_or_name)
                 else:
                     return "Firebase bağlantısı yok ve dosya erişilebilir değil."
                 
-        except Exception as e:
-            print(f"❌ Vision analizi hatası: {e}")
-            return f"Vision analizi hatası: {str(e)}"
+        except Exception as e:            return f"Vision analizi hatası: {str(e)}"
     
     def _analyze_with_gemini_vision(self, image_path):
         """
@@ -160,13 +137,9 @@ class AIServices:
                 }]
             }
             
-            result = self._make_gemini_request(data)
-            print(f"✅ Gemini Vision'dan text alındı: {result[:100]}...")
-            return result
+            result = self._make_gemini_request(data)            return result
             
-        except Exception as e:
-            print(f"❌ Gemini Vision hatası: {e}")
-            return f"Gemini Vision hatası: {str(e)}"
+        except Exception as e:            return f"Gemini Vision hatası: {str(e)}"
     
     def get_gemini_solution(self, konu, ders, mesaj, vision_text):
         """
@@ -212,14 +185,9 @@ KULLANICI MESAJI: {mesaj}
             result = self._make_gemini_request(data)
             
             # Çıktıyı temizle
-            cleaned_result = self._clean_ai_output(result)
+            cleaned_result = self._clean_ai_output(result)            return cleaned_result
             
-            print(f"✅ Gemini çözümü oluşturuldu: {cleaned_result[:100]}...")
-            return cleaned_result
-            
-        except Exception as e:
-            print(f"❌ Gemini çözüm hatası: {e}")
-            return f"Çözüm oluşturulurken hata: {str(e)}"
+        except Exception as e:            return f"Çözüm oluşturulurken hata: {str(e)}"
     
     def _clean_ai_output(self, text):
         """

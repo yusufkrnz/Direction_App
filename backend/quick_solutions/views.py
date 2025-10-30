@@ -36,17 +36,11 @@ def create_quick_solution(request):
                     # Django media dosyasını Firebase Storage'a yükle
                     blob = bucket.blob(file_name)
                     blob.upload_from_filename(quick_solution.fotograf.path)
-                    blob.make_public()
-                    
-                    print(f"✅ Firebase Storage'a yüklendi: {file_name}")
-                    
+                    blob.make_public()                    
                     # Firebase Vision AI ile fotoğraf analizi
                     vision_text = ai_services.analyze_image_with_firebase_vision(file_name)
                     
-                except Exception as e:
-                    print(f"❌ Firebase Storage hatası: {e}")
-                    print("🔄 Gemini Vision kullanılıyor...")
-                    # Fallback: Django media dosyasını kullan
+                except Exception as e:                    # Fallback: Django media dosyasını kullan
                     vision_text = ai_services.analyze_image_with_firebase_vision(quick_solution.fotograf.path)
                 
                 # Gemini AI ile çözüm
@@ -62,10 +56,7 @@ def create_quick_solution(request):
                 quick_solution.gemini_response = gemini_response
                 quick_solution.is_processed = True
                 quick_solution.processed_at = timezone.now()
-                quick_solution.save()
-                
-                print(f"✅ AI işlemi tamamlandı - ID: {quick_solution.id}")
-                
+                quick_solution.save()                
                 # Bildirim gönder
                 try:
                     notification = Notification.objects.create(
@@ -78,14 +69,8 @@ def create_quick_solution(request):
                             'konu': quick_solution.konu,
                             'ders': quick_solution.ders
                         }
-                    )
-                    print(f"✅ Bildirim gönderildi - ID: {notification.id}")
-                except Exception as e:
-                    print(f"❌ Bildirim gönderilemedi: {e}")
-                
-            except Exception as e:
-                print(f"❌ AI işlemi hatası - ID: {quick_solution.id}: {e}")
-                quick_solution.gemini_response = f"AI işlemi sırasında hata: {str(e)}"
+                    )                except Exception as e:                
+            except Exception as e:                quick_solution.gemini_response = f"AI işlemi sırasında hata: {str(e)}"
                 quick_solution.is_processed = True
                 quick_solution.processed_at = timezone.now()
                 quick_solution.save()

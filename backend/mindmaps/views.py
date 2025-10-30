@@ -44,12 +44,8 @@ def create_mindmap_from_speech(request):
         )
         
         # Alt düğümleri oluştur
-        nodes_data = analysis_result.get('nodes', [])
-        print(f"DEBUG: {len(nodes_data)} alt düğüm bulundu")
-        
-        for i, node_data in enumerate(nodes_data):
-            print(f"DEBUG: Düğüm {i+1} oluşturuluyor: {node_data}")
-            node = MindMapNode.objects.create(
+        nodes_data = analysis_result.get('nodes', [])        
+        for i, node_data in enumerate(nodes_data):            node = MindMapNode.objects.create(
                 mind_map=mind_map,
                 label=node_data.get('label', f'Alt Konu {i+1}'),
                 icon=node_data.get('icon', '📝'),
@@ -59,19 +55,12 @@ def create_mindmap_from_speech(request):
                 parent=main_node,
                 position_x=(i + 1) * 200,
                 position_y=100
-            )
-            print(f"DEBUG: Düğüm oluşturuldu: {node.label} (ID: {node.id})")
-        
+            )        
         # Bağlantıları oluştur
-        connections_data = analysis_result.get('connections', [])
-        print(f"DEBUG: {len(connections_data)} bağlantı bulundu")
-        
+        connections_data = analysis_result.get('connections', [])        
         for conn_data in connections_data:
             source_label = conn_data.get('source')
-            target_label = conn_data.get('target')
-            
-            print(f"DEBUG: Bağlantı oluşturuluyor: {source_label} -> {target_label}")
-            
+            target_label = conn_data.get('target')            
             source_node = MindMapNode.objects.filter(
                 mind_map=mind_map, 
                 label=source_label
@@ -87,18 +76,12 @@ def create_mindmap_from_speech(request):
                     source_node=source_node,
                     target_node=target_node,
                     connection_type=conn_data.get('type', 'default')
-                )
-                print(f"DEBUG: Bağlantı oluşturuldu: {source_node.label} -> {target_node.label}")
-            else:
-                print(f"DEBUG: Bağlantı oluşturulamadı - source: {source_node}, target: {target_node}")
-        
+                )            else:        
         # Eğer bağlantı yoksa veya bağlantı sayısı azsa, ana düğümden tüm alt düğümlere otomatik bağlantı oluştur
         alt_nodes = MindMapNode.objects.filter(mind_map=mind_map, level=1)
         existing_connections = MindMapConnection.objects.filter(mind_map=mind_map)
         
-        if len(existing_connections) < len(alt_nodes):
-            print(f"DEBUG: Bağlantı eksik, {len(alt_nodes)} alt düğüm için otomatik bağlantılar oluşturuluyor")
-            for alt_node in alt_nodes:
+        if len(existing_connections) < len(alt_nodes):            for alt_node in alt_nodes:
                 # Bu bağlantı zaten var mı kontrol et
                 existing_conn = existing_connections.filter(
                     source_node=main_node,
@@ -111,11 +94,7 @@ def create_mindmap_from_speech(request):
                         source_node=main_node,
                         target_node=alt_node,
                         connection_type='default'
-                    )
-                    print(f"DEBUG: Otomatik bağlantı oluşturuldu: {main_node.label} -> {alt_node.label}")
-                else:
-                    print(f"DEBUG: Bağlantı zaten mevcut: {main_node.label} -> {alt_node.label}")
-        
+                    )                else:        
         return Response({
             'success': True,
             'mind_map_id': mind_map.id,

@@ -1,6 +1,5 @@
 """
-YÖN App - Kapsamlı Analiz Servisi
-Bu modül tüm analiz işlemlerini yönetir.
+Comprehensive analysis service for exam performance and study patterns.
 """
 
 from datetime import datetime, timedelta
@@ -17,20 +16,21 @@ from fiverbase.firebase_service import FirebaseDataService
 
 
 class ComprehensiveAnalyzer:
-    """Kapsamlı analiz servisi"""
+    """Comprehensive analysis service for user performance"""
+    
+    WEIGHTS = {
+        'accuracy': 0.4,
+        'consistency': 0.3,
+        'progress': 0.2,
+        'effort': 0.1
+    }
     
     def __init__(self, user: User):
         self.user = user
         self.firebase_service = FirebaseDataService()
-        self.weights = {
-            'accuracy': 0.4,      # Doğruluk oranı
-            'consistency': 0.3,   # Tutarlılık
-            'progress': 0.2,      # İlerleme
-            'effort': 0.1         # Çaba
-        }
     
     def get_comprehensive_analysis(self) -> Dict[str, Any]:
-        """Kapsamlı analiz raporu"""
+        """Get comprehensive analysis report"""
         return {
             'exam_analysis': self.analyze_exam_performance(),
             'task_analysis': self.analyze_task_completion(),
@@ -41,12 +41,10 @@ class ComprehensiveAnalyzer:
         }
     
     def analyze_exam_performance(self) -> Dict[str, Any]:
-        """Deneme performans analizi - Firebase'den veri çeker"""
-        # Firebase'den deneme kayıtlarını al
+        """Analyze exam performance from Firebase"""
         firebase_exam_records = self.firebase_service.get_user_exam_records(self.user.firebase_uid)
         
         if not firebase_exam_records:
-            # Default değerler döndür
             return {
                 'total_exams': 0,
                 'average_net': 0.0,
@@ -66,7 +64,6 @@ class ComprehensiveAnalyzer:
                 'subject_performance': {}
             }
         
-        # Genel istatistikler
         total_exams = len(firebase_exam_records)
         total_net = sum(record.get('total_net', 0) for record in firebase_exam_records)
         average_net = total_net / total_exams if total_exams > 0 else 0

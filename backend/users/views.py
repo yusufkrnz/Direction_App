@@ -17,6 +17,39 @@ from yon_backend.authentication import require_firebase_auth
 # Firebase Firestore client
 db = firestore.client()
 
+FIREBASE_PROFILE_DEFAULTS = {
+    'target_profession': '',
+    'department': '',
+    'grade': '',
+    'is_active': True,
+    'email_verified': False
+}
+
+FIREBASE_REQUIRED_FIELDS = [
+    'firebase_uid', 'email', 'first_name', 'last_name',
+    'target_profession', 'department', 'grade',
+    'created_at', 'last_login', 'is_active', 'email_verified'
+]
+
+def get_user_ref(user_uid):
+    """Return Firestore user reference."""
+    return db.collection('users').document(user_uid)
+
+def build_user_data(decoded_token):
+    """Token'dan kullanıcı bilgilerini hazırlar (register için)."""
+    name = decoded_token.get('name', '')
+    user_data = {
+        'firebase_uid': decoded_token['uid'],
+        'email': decoded_token.get('email', ''),
+        'first_name': name.split()[0] if name else '',
+        'last_name': ' '.join(name.split()[1:]) if name and len(name.split()) > 1 else '',
+        'created_at': firestore.SERVER_TIMESTAMP,
+        'last_login': firestore.SERVER_TIMESTAMP,
+        'email_verified': decoded_token.get('email_verified', False)
+    }
+    user_data.update(FIREBASE_PROFILE_DEFAULTS)
+    return user_data
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def firebase_login(request):
@@ -25,56 +58,30 @@ def firebase_login(request):
         firebase_token = request.data.get('firebase_token')
         if not firebase_token:
             return Response({
-                'success': False,
-                'message': 'Firebase token gerekli'
+                'success': False, 'message': 'Firebase token gerekli'
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Firebase token'ı doğrula
         decoded_token = auth.verify_id_token(firebase_token)
         user_uid = decoded_token['uid']
-
-        # Kullanıcıyı Firestore'dan al veya oluştur
-        user_ref = db.collection('users').document(user_uid)
+        user_ref = get_user_ref(user_uid)
         doc = user_ref.get()
 
         if doc.exists:
             user_data = doc.to_dict()
-            # last_login güncelle
             user_ref.update({'last_login': firestore.SERVER_TIMESTAMP})
         else:
-            # Yeni kullanıcı oluştur
-            user_data = {
-                'firebase_uid': user_uid,
-                'email': decoded_token.get('email', ''),
-                'first_name': decoded_token.get('name', '').split()[0] if decoded_token.get('name') else '',
-                'last_name': ' '.join(decoded_token.get('name', '').split()[1:]) if decoded_token.get('name') and len(decoded_token.get('name', '').split()) > 1 else '',
-                'target_profession': '',
-                'department': '',
-                'grade': '',
-                'created_at': firestore.SERVER_TIMESTAMP,
-                'last_login': firestore.SERVER_TIMESTAMP,
-                'is_active': True,
-                'email_verified': decoded_token.get('email_verified', False)
-            }
+            user_data = build_user_data(decoded_token)
             user_ref.set(user_data)
-
-            # Kullanıcı alt koleksiyonlarını oluştur
             create_user_subcollections(user_uid)
 
         return Response({
             'success': True,
             'message': 'Giriş başarılı',
-            'data': {
-                'user': user_data,
-                'token': firebase_token  # Frontend'e token'ı geri gönder
-            }
+            'data': {'user': user_data, 'token': firebase_token}
         }, status=status.HTTP_200_OK)
-
     except Exception as e:
-        print(f"Firebase login error: {e}")
         return Response({
             'success': False,
-            'message': 'Giriş yapılamadı'
+            'message': 'Login failed'
         }, status=status.HTTP_401_UNAUTHORIZED)
 
 def create_user_subcollections(user_uid):
@@ -101,7 +108,25 @@ def create_user_subcollections(user_uid):
         user_ref.collection('flashcards').add({})
         
     except Exception as e:
-        print(f"Error creating user subcollections: {e}")
+        pass
+
+def get_user_profile_data(user_uid):
+    """Firestore'dan kullanıcı profili döndür (dict)"""
+    user_ref = get_user_ref(user_uid)
+    user_doc = user_ref.get()
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        safe_profile = {
+            'name': user_data.get('name', ''),
+            'email': user_data.get('email', ''),
+            'grade': user_data.get('grade', ''),
+            'department': user_data.get('department', ''),
+            'target_profession': user_data.get('target_profession', ''),
+            'created_at': user_data.get('created_at', ''),
+            'onboarding_completed': user_data.get('onboarding_completed', False)
+        }
+        return safe_profile
+    return None
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -111,30 +136,12 @@ def get_user_profile(request):
         user_uid = request.user.firebase_uid
         if not user_uid:
             return Response({'success': False, 'message': 'Kullanıcı bulunamadı'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        # Firestore'dan kullanıcı bilgilerini al
-        user_ref = db.collection('users').document(user_uid)
-        user_doc = user_ref.get()
-        
-        if user_doc.exists:
-            user_data = user_doc.to_dict()
-            return Response({
-                'success': True,
-                'data': {
-                    'name': user_data.get('name', ''),
-                    'email': user_data.get('email', ''),
-                    'grade': user_data.get('grade', ''),
-                    'department': user_data.get('department', ''),
-                    'target_profession': user_data.get('target_profession', ''),
-                    'created_at': user_data.get('created_at', ''),
-                    'onboarding_completed': user_data.get('onboarding_completed', False)
-                }
-            })
+        safe_profile = get_user_profile_data(user_uid)
+        if safe_profile is not None:
+            return Response({'success': True, 'data': safe_profile})
         else:
             return Response({'success': False, 'message': 'Profil bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
-            
     except Exception as e:
-        print(f"❌ get_user_profile hatası: {e}")
         return Response({'success': False, 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
@@ -144,49 +151,24 @@ def save_user_profile(request):
     try:
         user_uid = get_user_uid(request)
         if not user_uid:
-            return Response({
-                'success': False,
-                'message': 'Kullanıcı kimliği bulunamadı'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        # Gelen verileri al
-        target_profession = request.data.get('target_profession')
-        exam_type = request.data.get('exam_type')
-        grade = request.data.get('grade')
-        onboarding_completed = request.data.get('onboarding_completed')
-
-        # Firestore'da kullanıcı dokümanını güncelle
-        user_ref = db.collection('users').document(user_uid)
-        
-        update_data = {}
-        if target_profession is not None:
-            update_data['target_profession'] = target_profession
-        if exam_type is not None:
-            update_data['exam_type'] = exam_type
-        if grade is not None:
-            update_data['grade'] = grade
-        if onboarding_completed is not None:
-            update_data['onboarding_completed'] = onboarding_completed
-        
+            return Response({'success': False,'message': 'Kullanıcı kimliği bulunamadı'}, status=status.HTTP_401_UNAUTHORIZED)
+        field_mapping = {
+            'target_profession': request.data.get('target_profession'),
+            'exam_type': request.data.get('exam_type'),
+            'grade': request.data.get('grade'),
+            'onboarding_completed': request.data.get('onboarding_completed')
+        }
+        update_data = {k: v for k, v in field_mapping.items() if v is not None}
         # Onboarding tamamlandıysa tarih ekle
-        if onboarding_completed:
+        if update_data.get('onboarding_completed'):
             update_data['onboarding_completed_at'] = firestore.SERVER_TIMESTAMP
-        
         if update_data:
             update_data['updated_at'] = firestore.SERVER_TIMESTAMP
-            user_ref.update(update_data)
-
-        return Response({
-            'success': True,
-            'message': 'Profil başarıyla güncellendi'
-        }, status=status.HTTP_200_OK)
-
+            get_user_ref(user_uid).update(update_data)
+        return Response({'success': True, 'message': 'Profil başarıyla güncellendi'}, status=status.HTTP_200_OK)
     except Exception as e:
         print(f"Save user profile error: {e}")
-        return Response({
-            'success': False,
-            'message': 'Profil güncellenirken hata oluştu'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'success': False,'message': 'Profil güncellenirken hata oluştu'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @require_firebase_auth
 @csrf_exempt
@@ -217,15 +199,12 @@ def save_daily_data(request):
             'updated_at': firestore.SERVER_TIMESTAMP
         }, merge=True)
         
-        print(f"✅ Günlük veri kaydedildi: {user['uid']} - {today}")
-        
         return JsonResponse({
             'success': True,
             'message': 'Günlük veri kaydedildi'
         })
         
     except Exception as e:
-        print(f"❌ save_daily_data hatası: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @require_firebase_auth
@@ -252,15 +231,12 @@ def save_daily_goals(request):
             'updated_at': firestore.SERVER_TIMESTAMP
         }, merge=True)
         
-        print(f"✅ Günlük hedefler kaydedildi: {user['uid']}")
-        
         return JsonResponse({
             'success': True,
             'message': 'Hedefler kaydedildi'
         })
         
     except Exception as e:
-        print(f"❌ save_daily_goals hatası: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @require_firebase_auth
@@ -327,7 +303,6 @@ def get_daily_data(request):
         })
         
     except Exception as e:
-        print(f"❌ get_daily_data hatası: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @require_firebase_auth
@@ -352,13 +327,10 @@ def reset_daily_data(request):
             'updated_at': firestore.SERVER_TIMESTAMP
         }, merge=True)
         
-        print(f"✅ Günlük veri sıfırlandı: {user['uid']} - {today}")
-        
         return JsonResponse({
             'success': True,
             'message': 'Günlük veri sıfırlandı'
         })
         
     except Exception as e:
-        print(f"❌ reset_daily_data hatası: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)

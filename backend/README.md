@@ -47,17 +47,28 @@ Question (Sorular)
 
 ### 1. **Gereksinimler**
 ```bash
-pip install django djangorestframework djangorestframework-simplejwt django-cors-headers
+pip install -r requirements.txt
 ```
 
-### 2. **Veritabanı Kurulumu**
+### 2. **Environment Variables**
+```bash
+# .env.example dosyasını .env olarak kopyala
+cp .env.example .env
+
+# .env dosyasını düzenle ve kendi değerlerini ekle:
+# - SECRET_KEY: Django secret key
+# - GEMINI_API_KEY: Google Gemini API key
+# - FIREBASE_CRED_PATH: Firebase credentials dosya yolu
+```
+
+### 3. **Veritabanı Kurulumu**
 ```bash
 python manage.py migrate
 python manage.py load_topics    # Konuları yükle
 python manage.py createsuperuser
 ```
 
-### 3. **Geliştirme Sunucusu**
+### 4. **Geliştirme Sunucusu**
 ```bash
 python manage.py runserver
 ```

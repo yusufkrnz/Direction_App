@@ -15,12 +15,16 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     """
     Kullanıcı kayıt için serializer
+    - Şifre eşleşme kontrolü
+    - Sadece izin verilen (whitelist) field'lar User'a aktarılır
+    - Gereksiz/gizli alanlar user oluşturulurken dışarıda tutulur
     """
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
     
     class Meta:
         model = User
+        # Update: Sadece whitelisted fields
         fields = ['username', 'email', 'password', 'password_confirm', 'first_name', 'last_name', 'hedef_meslek', 'bolum', 'yas', 'cinsiyet', 'dogum_tarihi']
     
     def validate(self, attrs):
@@ -29,21 +33,29 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        validated_data.pop('password_confirm')
-        user = User.objects.create_user(**validated_data)
+        # Field filtering için fazlalıkları ayıkla
+        validated_data.pop('password_confirm', None)
+        # Whitelisted fields only!
+        allowed_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'hedef_meslek', 'bolum', 'yas', 'cinsiyet', 'dogum_tarihi']
+        filtered_data = {k: v for k, v in validated_data.items() if k in allowed_fields}
+        user = User.objects.create_user(**filtered_data)
         return user
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Kullanıcı profil güncelleme için serializer
+    - Güncellenen alanların filtrelenmesi
+    - Mass assignment açığı önlenir
     """
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'hedef_meslek', 'bolum', 'yas', 'cinsiyet', 'dogum_tarihi']
     
     def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+        # Sadece meta'daki alanları güncelle (güvenlik)
+        for attr in self.Meta.fields:
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
         instance.save()
         return instance
 

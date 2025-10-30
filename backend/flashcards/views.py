@@ -62,10 +62,11 @@ class FlashcardViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def random(self, request):
-        """
-        Rastgele flashcard'lar getir
-        """
-        count = int(request.query_params.get('count', 10))
+        """Rastgele flashcard'lar getir"""
+        try:
+            count = int(request.query_params.get('count', 10))
+        except ValueError:
+            count = 10
         topic_id = request.query_params.get('topic_id')
         
         queryset = self.get_queryset()
@@ -109,9 +110,7 @@ class FlashcardDeckViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def add_flashcard(self, request, pk=None):
-        """
-        Desteye flashcard ekle
-        """
+        """Desteye flashcard ekle"""
         deck = self.get_object()
         if deck.user != request.user:
             return Response({'error': 'Bu desteyi düzenleme yetkiniz yok'}, 
@@ -141,9 +140,7 @@ class FlashcardDeckViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['delete'])
     def remove_flashcard(self, request, pk=None):
-        """
-        Desteden flashcard kaldır
-        """
+        """Desteden flashcard kaldır"""
         deck = self.get_object()
         if deck.user != request.user:
             return Response({'error': 'Bu desteyi düzenleme yetkiniz yok'}, 
@@ -164,9 +161,7 @@ class FlashcardDeckViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def study(self, request, pk=None):
-        """
-        Deste çalışma modu - cevaplar gizli
-        """
+        """Deste çalışma modu - cevaplar gizli"""
         deck = self.get_object()
         flashcards = [item.flashcard for item in deck.flashcarddeckitem_set.all()]
         serializer = FlashcardStudySerializer(flashcards, many=True)

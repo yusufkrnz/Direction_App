@@ -175,10 +175,9 @@ def notification_stats(request):
         })
         
     except Exception as e:
-        print(f"❌ Bildirim istatistikleri hatası: {e}")
         return Response({
             'success': False,
-            'message': 'İstatistikler alınamadı'
+            'message': 'Statistics fetch failed'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -210,7 +209,8 @@ class NotificationSettingsView(generics.RetrieveUpdateAPIView):
 @permission_classes([IsAuthenticated])
 def create_system_notification(request):
     """Sistem bildirimi oluştur (admin için)"""
-    # TODO: Admin yetkisi kontrolü ekle
+    if not request.user.is_staff:
+        return Response({'error': 'Yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
     serializer = NotificationCreateSerializer(data=request.data)
     if serializer.is_valid():
         notification = serializer.save()

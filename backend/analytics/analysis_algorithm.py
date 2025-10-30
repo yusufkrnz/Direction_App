@@ -1,6 +1,5 @@
 """
-YÖN App - Deneme Analizi Algoritması
-Bu modül deneme analizi, zayıf konu tespiti ve roadmap oluşturma algoritmalarını içerir.
+Exam analysis algorithms for performance tracking and roadmap generation.
 """
 
 from datetime import datetime, timedelta
@@ -8,65 +7,35 @@ from typing import List, Dict, Any
 import math
 
 class ExamAnalyzer:
-    """Deneme analizi için ana sınıf"""
+    """Main class for exam analysis"""
+    
+    WEIGHTS = {
+        'accuracy': 0.6,
+        'omission': 0.2,
+        'error': 0.2
+    }
+    WEAK_TOPIC_THRESHOLD = 0.6
+    STUDY_HOURS_PER_TOPIC = 5
     
     def __init__(self):
-        self.weights = {
-            'accuracy': 0.6,      # Doğruluk oranı ağırlığı
-            'omission': 0.2,      # Boş bırakma oranı ağırlığı  
-            'error': 0.2          # Yanlış yapma oranı ağırlığı
-        }
+        pass
     
     def calculate_net(self, correct_count: int, wrong_count: int, total_questions: int) -> float:
-        """
-        Net hesaplama: doğru - (yanlış / 4)
-        
-        Args:
-            correct_count: Doğru sayısı
-            wrong_count: Yanlış sayısı
-            total_questions: Toplam soru sayısı
-            
-        Returns:
-            float: Hesaplanan net
-        """
+        """Calculate net score: correct - (wrong / 4)"""
         return correct_count - (wrong_count / 4)
     
     def analyze_question_attempts(self, attempts: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Soru cevaplarını analiz eder
-        
-        Args:
-            attempts: Soru cevap listesi
-                [
-                    {
-                        "question_id": "q1",
-                        "topic": "Paragraf",
-                        "subject": "TYT Türkçe", 
-                        "user_answer": "A",
-                        "correct_answer": "B",
-                        "is_blank": False
-                    },
-                    ...
-                ]
-                
-        Returns:
-            Dict: Analiz sonuçları
-        """
-        # Genel istatistikler
+        """Analyze question attempts and return performance metrics"""
         total_questions = len(attempts)
         correct_count = 0
         wrong_count = 0
         blank_count = 0
-        
-        # Konu bazlı istatistikler
         topic_stats = {}
         
         for attempt in attempts:
-            # Boş kontrolü
             if attempt.get('is_blank', False) or not attempt.get('user_answer'):
                 blank_count += 1
                 status = 'blank'
-            # Doğru/yanlış kontrolü
             elif attempt['user_answer'] == attempt['correct_answer']:
                 correct_count += 1
                 status = 'correct'
@@ -74,7 +43,6 @@ class ExamAnalyzer:
                 wrong_count += 1
                 status = 'wrong'
             
-            # Konu bazlı istatistikleri güncelle
             topic = attempt['topic']
             if topic not in topic_stats:
                 topic_stats[topic] = {
@@ -88,13 +56,8 @@ class ExamAnalyzer:
             topic_stats[topic]['total'] += 1
             topic_stats[topic][status] += 1
         
-        # Net hesapla
         net = self.calculate_net(correct_count, wrong_count, total_questions)
-        
-        # Konu bazlı performans hesapla
         topic_performance = self._calculate_topic_performance(topic_stats)
-        
-        # Zayıf konuları tespit et
         weak_topics = self._identify_weak_topics(topic_performance)
         
         return {
@@ -113,15 +76,7 @@ class ExamAnalyzer:
         }
     
     def _calculate_topic_performance(self, topic_stats: Dict[str, Dict]) -> Dict[str, Dict]:
-        """
-        Konu bazlı performans hesaplar
-        
-        Args:
-            topic_stats: Konu istatistikleri
-            
-        Returns:
-            Dict: Konu performansları
-        """
+        """Calculate performance metrics per topic"""
         topic_performance = {}
         
         for topic, stats in topic_stats.items():
@@ -130,16 +85,14 @@ class ExamAnalyzer:
             wrong = stats['wrong']
             blank = stats['blank']
             
-            # Oranları hesapla
             accuracy = correct / total if total > 0 else 0
             wrong_rate = wrong / total if total > 0 else 0
             blank_rate = blank / total if total > 0 else 0
             
-            # Zayıflık skoru hesapla
             weakness_score = (
-                self.weights['accuracy'] * (1 - accuracy) +
-                self.weights['omission'] * blank_rate +
-                self.weights['error'] * wrong_rate
+                self.WEIGHTS['accuracy'] * (1 - accuracy) +
+                self.WEIGHTS['omission'] * blank_rate +
+                self.WEIGHTS['error'] * wrong_rate
             )
             
             topic_performance[topic] = {
@@ -158,17 +111,7 @@ class ExamAnalyzer:
         return topic_performance
     
     def _identify_weak_topics(self, topic_performance: Dict[str, Dict], top_n: int = 5) -> List[Dict]:
-        """
-        En zayıf konuları tespit eder
-        
-        Args:
-            topic_performance: Konu performansları
-            top_n: Kaç tane zayıf konu döndürüleceği
-            
-        Returns:
-            List: Zayıf konular listesi (zayıflık skoruna göre sıralı)
-        """
-        # Zayıflık skoruna göre sırala
+        """Identify weakest topics based on weakness score"""
         sorted_topics = sorted(
             topic_performance.items(),
             key=lambda x: x[1]['weakness_score'],
@@ -190,23 +133,13 @@ class ExamAnalyzer:
         return weak_topics
     
     def generate_roadmap(self, weak_topics: List[Dict], max_topics_per_week: int = 3) -> Dict[str, Any]:
-        """
-        Zayıf konulara göre çalışma planı oluşturur
-        
-        Args:
-            weak_topics: Zayıf konular listesi
-            max_topics_per_week: Haftada maksimum kaç konu çalışılacak
-            
-        Returns:
-            Dict: Çalışma planı
-        """
+        """Generate study roadmap based on weak topics"""
         roadmap = {
             'total_weeks': math.ceil(len(weak_topics) / max_topics_per_week),
             'topics_per_week': max_topics_per_week,
             'weekly_plans': []
         }
         
-        # Haftalık planları oluştur
         for week in range(roadmap['total_weeks']):
             start_idx = week * max_topics_per_week
             end_idx = min(start_idx + max_topics_per_week, len(weak_topics))
@@ -217,7 +150,7 @@ class ExamAnalyzer:
                 'week_number': week + 1,
                 'topics': week_topics,
                 'focus_areas': [topic['subject'] for topic in week_topics],
-                'estimated_study_hours': len(week_topics) * 5,  # Her konu için 5 saat
+                'estimated_study_hours': len(week_topics) * self.STUDY_HOURS_PER_TOPIC,
                 'recommendations': self._generate_weekly_recommendations(week_topics)
             }
             
@@ -226,15 +159,7 @@ class ExamAnalyzer:
         return roadmap
     
     def _generate_weekly_recommendations(self, week_topics: List[Dict]) -> List[str]:
-        """
-        Haftalık öneriler oluşturur
-        
-        Args:
-            week_topics: O hafta çalışılacak konular
-            
-        Returns:
-            List: Öneriler listesi
-        """
+        """Generate weekly study recommendations"""
         recommendations = []
         
         for topic in week_topics:
@@ -250,24 +175,11 @@ class ExamAnalyzer:
         return recommendations
     
     def analyze_progress(self, previous_attempts: List[Dict], current_attempts: List[Dict]) -> Dict[str, Any]:
-        """
-        İlerleme analizi yapar
-        
-        Args:
-            previous_attempts: Önceki deneme verileri
-            current_attempts: Mevcut deneme verileri
-            
-        Returns:
-            Dict: İlerleme analizi
-        """
-        # Önceki ve mevcut analizleri yap
+        """Analyze progress between two exam attempts"""
         previous_analysis = self.analyze_question_attempts(previous_attempts)
         current_analysis = self.analyze_question_attempts(current_attempts)
         
-        # Net değişimi
         net_change = current_analysis['general_stats']['net'] - previous_analysis['general_stats']['net']
-        
-        # Konu bazlı ilerleme
         progress_by_topic = {}
         
         for topic in current_analysis['topic_performance']:
@@ -288,44 +200,4 @@ class ExamAnalyzer:
             'progress_by_topic': progress_by_topic,
             'current_analysis': current_analysis,
             'previous_analysis': previous_analysis
-        }
-
-# Kullanım örneği
-if __name__ == "__main__":
-    analyzer = ExamAnalyzer()
-    
-    # Örnek veri
-    sample_attempts = [
-        {
-            "question_id": "q1",
-            "topic": "Paragraf",
-            "subject": "TYT Türkçe",
-            "user_answer": "A",
-            "correct_answer": "B",
-            "is_blank": False
-        },
-        {
-            "question_id": "q2", 
-            "topic": "Paragraf",
-            "subject": "TYT Türkçe",
-            "user_answer": "C",
-            "correct_answer": "C",
-            "is_blank": False
-        },
-        {
-            "question_id": "q3",
-            "topic": "Denklem Çözme",
-            "subject": "TYT Matematik", 
-            "user_answer": "",
-            "correct_answer": "A",
-            "is_blank": True
-        }
-    ]
-    
-    # Analiz yap
-    result = analyzer.analyze_question_attempts(sample_attempts)
-    print("Analiz Sonucu:", result)
-    
-    # Roadmap oluştur
-    roadmap = analyzer.generate_roadmap(result['weak_topics'])
-    print("Roadmap:", roadmap) 
+        } 

@@ -19,19 +19,19 @@ class User(AbstractUser):
         ('diger', 'Diğer'),
     ]
     
-    firebase_uid=models.CharField(max_length=255,unique=True,null=True,blank=True)
+    firebase_uid=models.CharField(max_length=255, unique=True, null=True, blank=True, db_index=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    hedef_meslek = models.CharField(max_length=100, blank=True, null=True)
-    bolum = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES, default='sayisal')
+    hedef_meslek = models.CharField(max_length=100, blank=True, null=True)  # target_profession
+    bolum = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES, default='sayisal')  # department
     yas = models.PositiveIntegerField(blank=True, null=True, verbose_name='Yaş')
     cinsiyet = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True, verbose_name='Cinsiyet')
     dogum_tarihi = models.DateField(blank=True, null=True, verbose_name='Doğum Tarihi')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    USERNAME_FIELD = 'email'  # Email ile login
+    USERNAME_FIELD = 'email'  # Auth işlemlerinde email kullanılır
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     
     def __str__(self):

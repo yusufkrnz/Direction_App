@@ -24,17 +24,10 @@ db = firestore.client()
 @permission_classes([IsAuthenticated])
 def get_daily_tasks(request):
     """Günlük görevleri getir - Sadece bugün oluşturulan görevler"""
-    try:
-        print(f"🔍 get_daily_tasks çağrıldı")
-        # Kullanıcının UID'sini al
-        user_uid = request.user.firebase_uid
-        
-        print(f"🔍 user_uid: {user_uid}")
-        
+    try:        # Kullanıcının UID'sini al
+        user_uid = request.user.firebase_uid        
         # Bugünün tarihini al (Türkiye saati)
-        today = timezone.now().date()
-        print(f"🔍 Bugünün tarihi: {today}")
-        
+        today = timezone.now().date()        
         # Firebase'den görevleri al
         try:
             user_ref = db.collection('users').document(user_uid)
@@ -62,9 +55,7 @@ def get_daily_tasks(request):
                     
                     # Sadece bugün oluşturulan görevleri ekle
                     if created_date == today:
-                        tasks_data.append(task_data)
-            
-            print(f"✅ Firebase'den bugün için {len(tasks_data)} görev alındı")
+                        tasks_data.append(task_data)} görev alındı")
             
             # İstatistikleri hesapla
             total_tasks = len(tasks_data)
@@ -81,11 +72,7 @@ def get_daily_tasks(request):
                 }
             })
             
-        except Exception as firebase_error:
-            print(f"❌ Firebase hatası: {firebase_error}")
-            # Fallback: Django'dan al
-            print("🔄 Django'dan veri alınıyor...")
-            
+        except Exception as firebase_error:            # Fallback: Django'dan al            
             # Sadece bugün oluşturulan görevleri getir
             tasks = DailyTask.objects.filter(
                 user_uid=user_uid,
@@ -110,9 +97,7 @@ def get_daily_tasks(request):
                 }
             })
         
-    except Exception as e:
-        print(f"❌ get_daily_tasks hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görevler getirilirken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -121,13 +106,8 @@ def get_daily_tasks(request):
 @permission_classes([IsAuthenticated])
 def get_task_detail(request, task_id):
     """Belirli bir görevin detaylarını getir"""
-    try:
-        print(f"🔍 get_task_detail çağrıldı: {task_id}")
-        # Kullanıcının UID'sini al
-        user_uid = request.user.firebase_uid
-        
-        print(f"🔍 user_uid: {user_uid}")
-        
+    try:        # Kullanıcının UID'sini al
+        user_uid = request.user.firebase_uid        
         # Firebase'den görevi getir
         try:
             user_ref = db.collection('users').document(user_uid)
@@ -140,19 +120,13 @@ def get_task_detail(request, task_id):
                     'message': 'Görev bulunamadı'
                 }, status=status.HTTP_404_NOT_FOUND)
             
-            task_data = task_doc.to_dict()
-            print(f"✅ Firebase'den görev detayı alındı: {task_id}")
-            
+            task_data = task_doc.to_dict()            
             return Response({
                 'success': True,
                 'data': task_data
             })
             
-        except Exception as firebase_error:
-            print(f"❌ Firebase detay hatası: {firebase_error}")
-            # Fallback: Django'dan getir
-            print("🔄 Django'dan detay alınıyor...")
-            
+        except Exception as firebase_error:            # Fallback: Django'dan getir            
             # Görevi getir
             task = DailyTask.objects.get(id=task_id, user_uid=user_uid)
             
@@ -169,9 +143,7 @@ def get_task_detail(request, task_id):
             'success': False,
             'message': 'Görev bulunamadı'
         }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"❌ get_task_detail hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görev detayı getirilirken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -180,12 +152,7 @@ def get_task_detail(request, task_id):
 @permission_classes([IsAuthenticated])
 def create_daily_task(request):
     """Yeni görev oluştur"""
-    try:
-        print(f"🔍 create_daily_task çağrıldı")
-        print(f"🔍 request.user: {request.user}")
-        print(f"🔍 request.user.firebase_uid: {getattr(request.user, 'firebase_uid', 'YOK')}")
-        print(f"🔍 request.data: {request.data}")
-        
+    try:}")        
         # Kullanıcının UID'sini al
         user_uid = request.user.firebase_uid
         
@@ -197,17 +164,12 @@ def create_daily_task(request):
         
         # Request data'sını al
         data = request.data.copy()
-        data['user_uid'] = user_uid
-        
-        print(f"🔍 data: {data}")
-        
+        data['user_uid'] = user_uid        
         # Serialize et ve validate et
         serializer = DailyTaskSerializer(data=data)
         if serializer.is_valid():
             # Django database'e kaydet
-            task = serializer.save()
-            print(f"✅ Django'ya kaydedildi: {task.id}")
-            
+            task = serializer.save()            
             # Firebase Firestore'a kaydet
             try:
                 task_data = serializer.data
@@ -219,30 +181,21 @@ def create_daily_task(request):
                 user_ref = db.collection('users').document(user_uid)
                 tasks_ref = user_ref.collection('tasks')
                 firestore_task = tasks_ref.document(str(task.id))
-                firestore_task.set(task_data)
-                
-                print(f"✅ Firebase'e kaydedildi: {task.id}")
-                
-            except Exception as firebase_error:
-                print(f"❌ Firebase kayıt hatası: {firebase_error}")
-                # Firebase hatası olsa bile Django kaydı başarılı olduğu için devam et
+                firestore_task.set(task_data)                
+            except Exception as firebase_error:                # Firebase hatası olsa bile Django kaydı başarılı olduğu için devam et
             
             return Response({
                 'success': True,
                 'message': 'Görev başarıyla oluşturuldu',
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
-        else:
-            print(f"❌ Serializer errors: {serializer.errors}")
-            return Response({
+        else:            return Response({
                 'success': False,
                 'message': 'Geçersiz veri',
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
             
-    except Exception as e:
-        print(f"❌ create_daily_task hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görev oluşturulurken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -251,14 +204,8 @@ def create_daily_task(request):
 @permission_classes([IsAuthenticated])
 def update_daily_task(request, task_id):
     """Görevi güncelle"""
-    try:
-        print(f"🔍 update_daily_task çağrıldı: {task_id}")
-        # Kullanıcının UID'sini al
-        user_uid = request.user.firebase_uid
-        
-        print(f"🔍 user_uid: {user_uid}")
-        print(f"🔍 request.data: {request.data}")
-        
+    try:        # Kullanıcının UID'sini al
+        user_uid = request.user.firebase_uid        
         # Firebase'den görevi güncelle
         try:
             user_ref = db.collection('users').document(user_uid)
@@ -287,10 +234,7 @@ def update_daily_task(request, task_id):
             update_data['updated_at'] = timezone.now().isoformat()
             
             # Firebase'i güncelle
-            task_ref.update(update_data)
-            
-            print(f"✅ Firebase'de görev güncellendi: {task_id}")
-            
+            task_ref.update(update_data)            
             # Güncellenmiş veriyi döndür
             updated_doc = task_ref.get()
             updated_data = updated_doc.to_dict()
@@ -301,11 +245,7 @@ def update_daily_task(request, task_id):
                 'data': updated_data
             })
             
-        except Exception as firebase_error:
-            print(f"❌ Firebase güncelleme hatası: {firebase_error}")
-            # Fallback: Django'dan güncelle
-            print("🔄 Django'dan güncelleniyor...")
-            
+        except Exception as firebase_error:            # Fallback: Django'dan güncelle            
             # Görevi getir
             task = DailyTask.objects.get(id=task_id, user_uid=user_uid)
             
@@ -339,9 +279,7 @@ def update_daily_task(request, task_id):
             'success': False,
             'message': 'Görev bulunamadı'
         }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"❌ update_daily_task hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görev güncellenirken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -350,9 +288,7 @@ def update_daily_task(request, task_id):
 @permission_classes([IsAuthenticated])
 def get_tasks_by_date(request):
     """Belirli bir tarih için görevleri getir"""
-    try:
-        print(f"🔍 get_tasks_by_date çağrıldı")
-        # Kullanıcının UID'sini al
+    try:        # Kullanıcının UID'sini al
         user_uid = request.user.firebase_uid
         
         # Tarih parametresini al
@@ -371,11 +307,7 @@ def get_tasks_by_date(request):
             return Response({
                 'success': False,
                 'message': 'Geçersiz tarih formatı. YYYY-MM-DD formatında olmalı'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        print(f"🔍 user_uid: {user_uid}")
-        print(f"🔍 Hedef tarih: {target_date}")
-        
+            }, status=status.HTTP_400_BAD_REQUEST)        
         # Firebase'den görevleri al
         try:
             user_ref = db.collection('users').document(user_uid)
@@ -402,9 +334,7 @@ def get_tasks_by_date(request):
                     
                     # Sadece hedef tarihte oluşturulan görevleri ekle
                     if created_date == target_date:
-                        tasks_data.append(task_data)
-            
-            print(f"✅ Firebase'den {target_date} için {len(tasks_data)} görev alındı")
+                        tasks_data.append(task_data)} görev alındı")
             
             # İstatistikleri hesapla
             total_tasks = len(tasks_data)
@@ -422,11 +352,7 @@ def get_tasks_by_date(request):
                 }
             })
             
-        except Exception as firebase_error:
-            print(f"❌ Firebase hatası: {firebase_error}")
-            # Fallback: Django'dan al
-            print("🔄 Django'dan veri alınıyor...")
-            
+        except Exception as firebase_error:            # Fallback: Django'dan al            
             # Sadece hedef tarihte oluşturulan görevleri getir
             tasks = DailyTask.objects.filter(
                 user_uid=user_uid,
@@ -452,9 +378,7 @@ def get_tasks_by_date(request):
                 }
             })
         
-    except Exception as e:
-        print(f"❌ get_tasks_by_date hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görevler getirilirken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -463,13 +387,8 @@ def get_tasks_by_date(request):
 @permission_classes([IsAuthenticated])
 def delete_daily_task(request, task_id):
     """Görevi sil"""
-    try:
-        print(f"🔍 delete_daily_task çağrıldı: {task_id}")
-        # Kullanıcının UID'sini al
-        user_uid = request.user.firebase_uid
-        
-        print(f"🔍 user_uid: {user_uid}")
-        
+    try:        # Kullanıcının UID'sini al
+        user_uid = request.user.firebase_uid        
         # Firebase'den görevi sil
         try:
             user_ref = db.collection('users').document(user_uid)
@@ -483,20 +402,13 @@ def delete_daily_task(request, task_id):
                 }, status=status.HTTP_404_NOT_FOUND)
             
             # Firebase'den sil
-            task_ref.delete()
-            
-            print(f"✅ Firebase'den görev silindi: {task_id}")
-            
+            task_ref.delete()            
             return Response({
                 'success': True,
                 'message': 'Görev başarıyla silindi'
             })
             
-        except Exception as firebase_error:
-            print(f"❌ Firebase silme hatası: {firebase_error}")
-            # Fallback: Django'dan sil
-            print("🔄 Django'dan siliniyor...")
-            
+        except Exception as firebase_error:            # Fallback: Django'dan sil            
             # Görevi getir ve sil
             task = DailyTask.objects.get(id=task_id, user_uid=user_uid)
             task.delete()
@@ -511,9 +423,7 @@ def delete_daily_task(request, task_id):
             'success': False,
             'message': 'Görev bulunamadı'
         }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"❌ delete_daily_task hatası: {e}")
-        return Response({
+    except Exception as e:        return Response({
             'success': False,
             'message': f'Görev silinirken hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
