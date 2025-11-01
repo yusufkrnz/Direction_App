@@ -1,5 +1,7 @@
 # 🎯 YÖN - AI-Powered Exam Preparation Platform
 
+![YÖN Logo](media/image%20copy%207.png)
+
 > **Bootcamp Project:** Developed for the "Yapay Zeka ve Teknoloji Akademisi" Bootcamp Competition  
 > **Role:** Full Stack Developer  
 > **Responsibilities:** Complete system architecture, backend development, mobile app development, AI integration, and deployment
@@ -9,6 +11,16 @@
 ## 📋 Project Overview
 
 **YÖN** is an intelligent exam preparation platform designed to help students prepare for standardized tests (TYT/AYT) through personalized study plans, AI-powered analytics, and adaptive learning techniques.
+
+### 📱 Application Screenshots
+
+| Dashboard | Analysis | Mind Maps |
+|-----------|----------|-----------|
+| ![Dashboard](media/image%20copy%204.png) | ![Analysis](media/image%20copy%205.png) | ![Mind Map](media/image%20copy%206.png) |
+
+| Daily Tasks | Question Box | Profile |
+|-------------|--------------|---------|
+| ![Tasks](media/image%20copy%208.png) | ![Questions](media/image%20copy%209.png) | ![Profile](media/image%20copy.png) |
 
 ### 🏆 Key Achievements
 - **Full Stack Development:** Designed and developed the entire system from scratch
