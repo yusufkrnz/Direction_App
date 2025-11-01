@@ -22,9 +22,9 @@
 |------------|-------------|--------------|
 | ![Tech Stack](media/image%20copy%206.png) | ![Tasks](media/image%20copy%208.png) | ![Questions](media/image%20copy%209.png) |
 
-| Profile | Additional Screens |
-|---------|--------------------|
-| ![Profile](media/image%20copy.png) | ![Additional](media/image.png) |
+| Missing Features | Analysis Details |
+|------------------|------------------|
+| ![Missing Features](media/image%20copy.png) | ![Analysis Details](media/image.png) |
 
 ### 🏆 Key Achievements
 - **Full Stack Development:** Designed and developed the entire system from scratch
