@@ -14,13 +14,17 @@
 
 ### 📱 Application Screenshots
 
-| Dashboard | Analysis | Mind Maps |
-|-----------|----------|-----------|
-| ![Dashboard](media/image%20copy%204.png) | ![Analysis](media/image%20copy%205.png) | ![Mind Map](media/image%20copy%206.png) |
+| Dashboard | Analysis | Mind Map |
+|-----------|----------|----------|
+| ![Dashboard](media/image%20copy%202.png) | ![Analysis](media/image%20copy%204.png) | ![Mind Map](media/image%20copy%203.png) |
 
-| Daily Tasks | Question Box | Profile |
-|-------------|--------------|---------|
-| ![Tasks](media/image%20copy%208.png) | ![Questions](media/image%20copy%209.png) | ![Profile](media/image%20copy.png) |
+| Tech Stack | Daily Tasks | Question Box |
+|------------|-------------|--------------|
+| ![Tech Stack](media/image%20copy%206.png) | ![Tasks](media/image%20copy%208.png) | ![Questions](media/image%20copy%209.png) |
+
+| Profile | Additional Screens |
+|---------|--------------------|
+| ![Profile](media/image%20copy.png) | ![Additional](media/image.png) |
 
 ### 🏆 Key Achievements
 - **Full Stack Development:** Designed and developed the entire system from scratch
